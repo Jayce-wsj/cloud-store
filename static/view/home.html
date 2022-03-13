@@ -1,0 +1,172 @@
+<html>
+
+<head>
+  <script src="http://libs.baidu.com/jquery/2.0.0/jquery.min.js"></script>
+  <!-- 最新版本的 Bootstrap 核心 CSS 文件 -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@3.3.7/dist/css/bootstrap.min.css" integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u"
+    crossorigin="anonymous">
+
+  <!-- 可选的 Bootstrap 主题文件（一般不用引入） -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@3.3.7/dist/css/bootstrap-theme.min.css" integrity="sha384-rHyoN1iRsVXV4nD0JutlnGaslCJuC7uwjduW9SVrLvRYooPp2bWYgmgJQIXwl/Sp"
+    crossorigin="anonymous">
+
+  <!-- 最新的 Bootstrap 核心 JavaScript 文件 -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@3.3.7/dist/js/bootstrap.min.js" integrity="sha384-Tc5IQib027qvyjSMfHjOMaLkfuWVxZxUPnCJA7l2mCWNIpG9mGCD8wGNIcPD7Txa"
+    crossorigin="anonymous"></script>
+
+  <script src="/static/js/auth.js"></script>
+  <style>
+    .catagory{
+      width:60px;
+      display: inline-block;
+      float:left;
+    }
+    .catagory-r{
+      width:100px;
+      display: inline-block;
+      float:right;
+    }
+  </style>
+</head>
+
+<body style="width:100%;height:100%">
+  <div style="width:100%;height:100%;margin:0 0 10px 0;text-align: center;">
+    <div style="font-size:20px;font-weight:bold;
+                margin:0;background: rgb(195, 228, 250);height:32px;">
+      文件云盘首页
+      <span style="display:inline-block;float:right;"><a href="/user/logout">[退出]</a></span>
+    </div>
+    <table style="height:100%;width:100%;text-align: left;border-width: 2px; border-color: lightslategrey;">
+      <tbody>
+        <tr style="margin-bottom: 20px;">
+          <td style="width:20%;height: 100%;background: lightsteelblue;">
+            <div style="text-align: top;height:20%;margin: 10px 0 0 10px;">
+              <img style="width:80px;height:80px;" src="/static/img/avatar.jpeg"></img><br>
+              用户名: <p id="username" style="color: seagreen"></p>
+              注册时间: <p id="regtime" style="color: seagreen"></p>
+            </div>
+            <div style="height: 80%;"></div>
+          </td>
+          <td style="width: 3px;height:100%;">
+            <div style="width:100%;height: 100%;background:rgb(202, 157, 248);"></div>
+          </td>
+          <td style="text-align: top;">
+            <div style="height:50px;border-bottom:1px solid #000;margin-top:30px;padding-top:10px;padding-left:30px;">
+              <span class="catagory"><a href="javascript:updateFileList('all')">[全部]</a></span>
+              <span class="catagory"><a href="javascript:updateFileList('pic')">[图片]</a></span>
+              <span class="catagory"><a href="javascript:updateFileList('mov')">[视频]</a></span>
+              <span class="catagory"><a href="javascript:updateFileList('doc')">[文档]</a></span>
+              <span class="catagory"><a href="javascript:updateFileList('other')">[其他]</a></span>
+              <span class="catagory-r"><button class="btn btn-success" onclick="toUploadFile()" style="float: right;margin-right: 30px;">上传文件
+              </button></span>
+            </div>
+            <div style="height:95%;" style="width:100%;">
+              <table id="filetbl" style="margin-left:3%;width:96%;">
+              </table>
+            </div>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</body>
+
+<script lang="javascript">
+  window.onload = function () {
+    var username = document.getElementById('username');
+    $.ajax({
+      url: "/user/info?" + queryParams(),
+      type: "POST",
+      error: function (jqXHR, textStatus, errorThrown) {
+        if (textStatus == "error") {
+          alert(textStatus + " : " + errorThrown);
+        } else {
+          alert(textStatus);
+        }
+      },
+      success: function (res, textStatus, jqXHR) {
+        console.log(res)
+        $("#username").text(res.data.username)
+        $("#regtime").text(res.data.regtime)
+        updateFileList('all');
+      }
+    });
+  }
+
+  function updateFileList(type) {
+    console.log(type)
+    $.ajax({
+      url: "/file/query?type=" + type + "&" + queryParams(),
+      type: "POST",
+      data: {
+        limit: 15
+      },
+      error: function (jqXHR, textStatus, errorThrown) {
+        if (textStatus == "error") {
+          alert(textStatus + " : " + errorThrown);
+        } else {
+          alert(textStatus);
+        }
+      },
+      success: function (res, textStatus, jqXHR) {
+        data = res.data
+        //删除旧数据
+        var rows = $("#filetbl tr").remove()
+        $("#filetbl").append('<tr style="height:50px;border:1px;"><th>文件类型</th><th>文件名</th><th>文件大小</th><th>上传时间</th><th>操作</th></tr>')
+        //渲染新数据
+        for (var i = 0; i < data.length; i++) {
+          var x = document.getElementById('filetbl').insertRow();
+          var cell = x.insertCell();
+          if (data[i].type === "pic"){
+            cell.innerHTML = "图片";
+          }else if (data[i].type === "mov"){
+            cell.innerHTML = "视频";
+          }else if (data[i].type === "doc"){
+            cell.innerHTML = "文档";
+          }else if (data[i].type === "other"){
+            cell.innerHTML = "其他";
+          }
+
+
+          cell = x.insertCell();
+          cell.innerHTML = data[i].name;
+
+          cell = x.insertCell();
+          cell.innerHTML = data[i].size + "k";
+
+          cell = x.insertCell();
+          cell.innerHTML = data[i].uploadtime;
+
+          cell = x.insertCell();
+          cell.innerHTML = '<button class="btn btn-success" ' +
+            'style="height:30px;margin:5px 0;"' +
+            'onClick = "downloadFile(\'http://127.0.0.1/file/' +
+            'download?objectname=' + data[i].name + '&' + queryParams() + '\')">下载</button>';
+        }
+      }
+    });
+  }
+
+  function toUploadFile() {
+    window.location.href = '/file/upload?' + queryParams();
+  }
+
+  function downloadFile(durl) {
+    $.ajax({
+      url: durl,
+      type: "GET",
+      error: function (jqXHR, textStatus, errorThrown) {
+        if (textStatus == "error") {
+          alert(textStatus + " : " + errorThrown);
+        } else {
+          alert(textStatus);
+        }
+      },
+      success: function (res, textStatus, jqXHR) {
+        window.open(res.data)
+      }
+    });
+  }
+</script>
+
+</html>
